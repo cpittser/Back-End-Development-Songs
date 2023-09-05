@@ -51,3 +51,39 @@ def parse_json(data):
 ######################################################################
 # INSERT CODE HERE
 ######################################################################
+@app.route("/health")
+def health():
+    return jsonify(dict(status="OK")), 200
+
+@app.route("/count")
+def count():
+    """return length of data"""
+    count = db.songs.count_documents({})
+    return ({"count": count}), 200
+
+@app.route("/song", methods=["GET"])
+def songs():
+    songs = list(db.songs.find({}))
+    return {"songs": parse_json(songs)}, 200
+
+@app.route("/song/<int:id>", methods=["GET"])
+def get_song_by_id(id):
+    song = db.songs.find_one({"id": id})
+    if song:
+        return parse_json(song), 200       
+    return({"message":"song with id not found"}, 404)
+
+@app.route("/song", methods=["POST"])
+def create_song():
+    '''create song'''
+    newsong = request.json
+
+    song = db.songs.find_one({"id": newsong["id"]})
+    if song:
+        return {
+            "Message": f"song with id {song['id']} already present"
+        }, 302
+
+    new_id: InsertOneResult = db.songs.insert_one(newsong)
+
+    return {"new id": parse_json(new_id)}, 201
